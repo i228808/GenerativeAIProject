@@ -25,56 +25,6 @@ class GitHubService:
         url = f"{self.base_url}/repos/{owner}/{repo}/commits"
         params = {"per_page": limit}
         
-        response = requests.get(url, headers=self.headers, params=params)
-        response.raise_for_status()
-        
-        commits = []
-        for item in response.json():
-            commit = item["commit"]
-            commits.append({
-                "sha": item["sha"],
-                "message": commit["message"],
-                "date": commit["author"]["date"],
-                "author": commit["author"]["name"]
-            })
-        return commits
-
-    def fetch_file_structure(self, repo_url: str) -> str:
-        # Simplified: Fetch tree (recursive) to get file structure
-        owner, repo = self._get_repo_details(repo_url)
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/trees/main?recursive=1" # Assuming main branch
-        
-        response = requests.get(url, headers=self.headers)
-        if response.status_code == 404:
-             url = f"{self.base_url}/repos/{owner}/{repo}/git/trees/master?recursive=1" # Try master
-             response = requests.get(url, headers=self.headers)
-        
-        response.raise_for_status()
-        
-        tree = response.json().get("tree", [])
-        structure = []
-        for item in tree:
-            if item["type"] == "blob" and item["path"].endswith(".py"): # Focus on Python files for MVP
-                structure.append(item["path"])
-        return "\n".join(structure)
-
-    def fetch_file_content(self, repo_url: str, file_path: str) -> str:
-        owner, repo = self._get_repo_details(repo_url)
-        url = f"{self.base_url}/repos/{owner}/{repo}/contents/{file_path}"
-        
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        
-        content = requests.get(response.json()["download_url"]).text
-        return content
-
-import json
-from .analysis import AnalysisService
-
-class GroqService:
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("GROQ_API_KEY")
-        self.model = "llama-3.3-70b-versatile"
         try:
             if self.api_key:
                 self.client = Groq(api_key=self.api_key)

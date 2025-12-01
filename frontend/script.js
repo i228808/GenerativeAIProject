@@ -10,9 +10,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const mermaidContent = document.getElementById('mermaidContent');
     const downloadMdBtn = document.getElementById('downloadMdBtn');
     const downloadWordBtn = document.getElementById('downloadWordBtn');
+    const historyList = document.getElementById('historyList');
+    const loginBtn = document.getElementById('loginBtn');
+    const userInfo = document.getElementById('userInfo');
 
     // Initialize Mermaid
     mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+    // Check for auth token
+    const token = localStorage.getItem('github_token');
+    if (token) {
+        if (loginBtn) loginBtn.classList.add('hidden');
+        if (userInfo) userInfo.classList.remove('hidden');
+    }
+
+    // Handle OAuth Callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+        handleAuthCallback(code);
+    }
+
+    // Load history on start
+    loadHistory();
+
+    if (loginBtn) {
+        loginBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('http://localhost:8000/auth/login');
+                const data = await response.json();
+                window.location.href = data.url;
+            } catch (error) {
+                alert('Login failed: ' + error.message);
+            }
+        });
+    }
+
+    async function handleAuthCallback(code) {
+        try {
+            const response = await fetch(`http://localhost:8000/auth/callback?code=${code}`);
+            if (!response.ok) throw new Error('Auth failed');
+
+            const data = await response.json();
+            localStorage.setItem('github_token', data.access_token);
+
+            // Clean URL
+            window.history.replaceState({}, document.title, "/");
+
+            if (loginBtn) loginBtn.classList.add('hidden');
+            if (userInfo) userInfo.classList.remove('hidden');
+            alert('Logged in successfully!');
+        } catch (error) {
+            alert('Authentication failed: ' + error.message);
+        }
+    }
 
     docTypeSelect.addEventListener('change', () => {
         if (docTypeSelect.value === 'diagram') {
@@ -46,11 +97,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 body.diagram_type = diagramType;
             }
 
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+
+            const token = localStorage.getItem('github_token');
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`http://localhost:8000/generate/${docType}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: headers,
                 body: JSON.stringify(body),
             });
 
@@ -63,24 +121,66 @@ document.addEventListener('DOMContentLoaded', () => {
             loadingSection.classList.add('hidden');
             resultSection.classList.remove('hidden');
 
-            if (docType === 'diagram') {
-                outputContent.classList.add('hidden');
-                mermaidContent.classList.remove('hidden');
-                mermaidContent.textContent = data.content;
-                await mermaid.run({ nodes: [mermaidContent] });
-            } else {
-                outputContent.innerHTML = marked.parse(data.content);
-            }
-
-            // Setup download buttons
-            downloadMdBtn.onclick = () => downloadFile(data.content, `${docType}.md`, 'text/markdown');
-            downloadWordBtn.onclick = () => downloadWord(data.content, `${docType}.docx`);
+            displayContent(data.content, docType);
+            loadHistory(); // Refresh history
 
         } catch (error) {
             loadingSection.classList.add('hidden');
             alert('Failed to generate documentation: ' + error.message);
         }
     });
+
+    function displayContent(content, type) {
+        if (type.startsWith('diagram') || content.trim().startsWith('classDiagram') || content.trim().startsWith('sequenceDiagram')) {
+            outputContent.classList.add('hidden');
+            mermaidContent.classList.remove('hidden');
+            mermaidContent.textContent = content;
+            mermaid.run({ nodes: [mermaidContent] });
+        } else {
+            outputContent.classList.remove('hidden');
+            mermaidContent.classList.add('hidden');
+            outputContent.innerHTML = marked.parse(content);
+        }
+
+        // Setup download buttons
+        downloadMdBtn.onclick = () => downloadFile(content, `${type}.md`, 'text/markdown');
+        downloadWordBtn.onclick = () => downloadWord(content, `${type}.docx`);
+    }
+
+    async function loadHistory() {
+        try {
+            const response = await fetch('http://localhost:8000/documents');
+            const docs = await response.json();
+
+            if (historyList) {
+                historyList.innerHTML = '';
+                docs.forEach(doc => {
+                    const li = document.createElement('li');
+                    const date = new Date(doc.created_at).toLocaleDateString();
+                    li.innerHTML = `
+                        <strong>${doc.doc_type.toUpperCase()}</strong>
+                        <span class="meta">${doc.repo_url.split('/').pop()} - ${date}</span>
+                    `;
+                    li.onclick = () => loadDocument(doc.id);
+                    historyList.appendChild(li);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load history:', error);
+        }
+    }
+
+    async function loadDocument(id) {
+        try {
+            const response = await fetch(`http://localhost:8000/documents/${id}`);
+            const data = await response.json();
+
+            resultSection.classList.remove('hidden');
+            displayContent(data.content, data.doc_type);
+        } catch (error) {
+            alert('Failed to load document');
+        }
+    }
 
     function downloadFile(content, filename, type) {
         const blob = new Blob([content], { type: type });
