@@ -8,63 +8,64 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-</head>
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ReEngineDoc Assistant</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    </head>
 
 <body>
     <div class="container">
-        <header>
-            <h1>ReEngineDoc Assistant</h1>
-            <p>Auto-generate technical documentation from your codebase.</p>
-        </header>
+        <aside class="sidebar">
 
-        <main>
-            <div class="input-section">
-                <div class="input-group">
-                    <label for="repoUrl">GitHub Repository URL</label>
-                    <input type="text" id="repoUrl" placeholder="https://github.com/owner/repo" required>
-                </div>
-
-                <div class="input-group">
-                    <label for="docType">Document Type</label>
-                    <select id="docType">
-                        <option value="adr">Architectural Decision Record (ADR)</option>
-                        <option value="srs">Software Requirements Specification (SRS)</option>
-                        <option value="diagram">Architectural Diagram (Mermaid)</option>
-                    </select>
-                </div>
-
-                <div id="diagramTypeGroup" class="input-group hidden">
-                    <label for="diagramType">Diagram Type</label>
-                    <select id="diagramType">
-                        <option value="class">Class Diagram</option>
-                        <option value="sequence">Sequence Diagram</option>
-                        <option value="usecase">Use Case Diagram</option>
-                    </select>
-                </div>
-
-                <button id="generateBtn">Generate Documentation</button>
+            <div class="input-group">
+                <label for="docType">Document Type</label>
+                <select id="docType">
+                    <option value="adr">Architectural Decision Record (ADR)</option>
+                    <option value="srs">Software Requirements Specification (SRS)</option>
+                    <option value="diagram">Architectural Diagram (Mermaid)</option>
+                </select>
             </div>
 
-            <div id="loading" class="hidden">
-                <div class="spinner"></div>
-                <p>Analyzing codebase and generating content...</p>
+            <div id="diagramTypeGroup" class="input-group hidden">
+                <label for="diagramType">Diagram Type</label>
+                <select id="diagramType">
+                    <option value="class">Class Diagram</option>
+                    <option value="sequence">Sequence Diagram</option>
+                    <option value="usecase">Use Case Diagram</option>
+                </select>
             </div>
 
-            <div id="resultSection" class="hidden">
-                <div class="result-header">
-                    <h2>Generated Output</h2>
-                    <div class="action-buttons">
-                        <button id="downloadMdBtn" class="secondary-btn">Download .md</button>
-                        <button id="downloadWordBtn" class="secondary-btn">Download .docx</button>
-                    </div>
-                </div>
-                <div id="outputContent" class="markdown-body"></div>
-                <div id="mermaidContent" class="mermaid hidden"></div>
+            <button id="generateBtn">Generate Documentation</button>
+    </div>
+
+    <div id="loading" class="hidden">
+        <div class="spinner"></div>
+        <p>Analyzing codebase and generating content...</p>
+    </div>
+
+    <div id="resultSection" class="hidden">
+        <div class="result-header">
+            <h2>Generated Output</h2>
+            <div class="action-buttons">
+                <button id="downloadMdBtn" class="secondary-btn">Download .md</button>
+                <button id="downloadWordBtn" class="secondary-btn">Download .docx</button>
             </div>
-        </main>
+        </div>
+        <div id="outputContent" class="markdown-body"></div>
+        <div id="mermaidContent" class="mermaid hidden"></div>
+    </div>
+    </main>
+    </div>
     </div>
     <script src="script.js"></script>
 </body>
